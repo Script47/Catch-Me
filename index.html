@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <style>
+        html, body {
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+
+    <title>Catch Me!</title>
+</head>
+<body>
+
+<canvas id="canvas" width="500" height="500" autofocus></canvas>
+
+<script>
+    function Rectangle(x, y, w, h, c) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        this.v = 5;
+        this.c = c || 'red';
+        this.d = null;
+
+        return {
+            randomizePosition: () => {
+                this.x = Math.floor(Math.random() * (canvas.clientWidth - this.w));
+                this.y = Math.floor(Math.random() * (canvas.clientHeight - this.h));
+            },
+
+            collidingWith: (obj) => {
+                if (
+                    this.x + obj.get('w') >= obj.get('x') && this.x <= obj.get('x') + obj.get('w')
+                    &&
+                    this.y + obj.get('h') >= obj.get('y') && this.y <= obj.get('y') + obj.get('h')
+                ) {
+                    return true;
+                }
+
+                return false;
+            },
+
+            move: () => {
+                if (this.y >= canvas.clientHeight - this.h) {
+                    this.d = 'w';
+                } else if (this.y <= 0) {
+                    this.d = 's';
+                } else if (this.x >= canvas.clientWidth - this.w) {
+                    this.d = 'a';
+                } else if (this.x <= 0) {
+                    this.d = 'd';
+                }
+
+                switch (this.d) {
+                    case 'w':
+                        this.y -= this.v;
+                        break;
+
+                    case 'a':
+                        this.x -= this.v;
+                        break;
+
+                    case 's':
+                        this.y += this.v;
+                        break;
+
+                    case 'd':
+                        this.x += this.v;
+                        break;
+                }
+            },
+
+            draw: () => {
+                ctx.save();
+
+                ctx.fillStyle = this.c;
+                ctx.fillRect(this.x, this.y, this.w, this.h);
+
+                ctx.restore();
+            },
+
+            set: (prop, val) => {
+                this[prop] = val;
+            },
+
+            get: (prop) => {
+                return this[prop];
+            },
+
+            dump: () => {
+                console.log(this);
+            }
+        }
+    }
+
+    /***********************************
+     * Main game loop which will handle
+     * all the logic and rendering.
+     ***********************************/
+    function loop() {
+        ctx.save();
+
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.font = '15px Arial';
+        ctx.fillStyle = 'black';
+        ctx.fillText(`Score: ${score}`, 3, 15);
+
+        ctx.restore();
+
+        player.draw();
+        player.move();
+        food.draw();
+
+        if (player.collidingWith(food)) {
+            score++;
+
+            food.randomizePosition();
+        }
+
+        window.requestAnimationFrame(loop);
+    }
+
+    window.addEventListener('keypress', function (e) {
+        const key = e.code.toLowerCase().trim().split('key').filter(k => k)[0];
+
+        switch (key) {
+            case 'w':
+            case 'd':
+            case 'a':
+            case 's':
+                player.set('d', key);
+                break;
+
+            case 'space':
+                player.set('d', null);
+                break;
+        }
+    });
+
+    /**************************************
+     * Handle resizing of canvas on resize
+     * of window
+     **************************************/
+    window.addEventListener('resize', function () {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+
+    const player = new Rectangle(0, 0, 20, 20, 'orange'),
+        food = new Rectangle(150, 150, 20, 20, 'red');
+
+    let canvas,
+        ctx,
+        score = 0;
+
+    document.addEventListener('DOMContentLoaded', function () {
+        canvas = document.querySelector('#canvas');
+        ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        window.requestAnimationFrame(loop);
+    });
+</script>
+</body>
+</html>
